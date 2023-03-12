@@ -15,10 +15,10 @@
     "@volar/vue-language-core": "latest",
     "@vue/compiler-sfc": "latest",
     "muggle-string": "latest",
+    "sass": "^1.59.2",
     "typescript": "latest",
     "vite": "latest",
     "vite-plugin-inspect": "latest",
-    "vite-plugin-vue-component-preview": "latest",
     "vue-tsc": "latest"
   }
 }
