@@ -3,7 +3,7 @@
 </template>
 
 <script lang="ts" setup>
-import Game from './components/FruitNinja/Game.vue';
+import Game from './components/FruitNinja/index.vue';
 </script>
 
 <style>

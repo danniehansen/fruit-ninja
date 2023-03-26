@@ -1,10 +1,12 @@
 <script lang="ts">
-import { defineComponent, getCurrentInstance, onBeforeUnmount } from 'vue';
+import { defineComponent, watch } from 'vue';
 import { CanvasApi } from './Types';
+import { registerComponent } from './Utils';
 
 interface Point {
   x: number;
   y: number;
+  health: number;
 }
 
 export default defineComponent({
@@ -25,69 +27,28 @@ export default defineComponent({
     },
   },
   render() {},
-  setup(props, context) {
-    const instance = getCurrentInstance();
-    const pointInteval = 30;
-    const decayInterval = 90;
-
+  setup(props) {
     let points: Point[] = [];
-    let timeSinceLastPoint: number | null = null;
-    let timeSinceLastDecay: number | null = null;
-
-    function getDistance(x1: number, y1: number, x2: number, y2: number) {
-      let y = x2 - x1;
-      let x = y2 - y1;
-
-      return Math.sqrt(x * x + y * y);
-    }
 
     const update = (api: CanvasApi) => {
       if (api.deltaTime === undefined) {
         return;
       }
 
+      for (const point of points) {
+        point.health -= api.deltaTime;
+      }
+
       if (props.interact) {
-        const lastPoint = points.length > 0 ? points[points.length - 1] : null;
-        const distance = lastPoint
-          ? getDistance(props.x, props.y, lastPoint.x, lastPoint.y)
-          : null;
-
-        if (
-          timeSinceLastPoint === null ||
-          ((distance === null || distance > 100) &&
-            timeSinceLastPoint + api.deltaTime > pointInteval)
-        ) {
-          timeSinceLastPoint = 0;
-
-          points.push({
-            x: props.x,
-            y: props.y,
-          });
-        } else {
-          timeSinceLastPoint += api.deltaTime;
-        }
+        points.push({
+          x: props.x,
+          y: props.y,
+          health: 100,
+        });
       }
 
-      if (
-        timeSinceLastDecay === null ||
-        timeSinceLastDecay + api.deltaTime > decayInterval
-      ) {
-        timeSinceLastDecay = 0;
-
-        points.shift();
-      } else {
-        timeSinceLastDecay += api.deltaTime;
-      }
-
-      if (points.length > 8) {
-        points = points
-          .reverse()
-          .slice(0, 8)
-          .reverse();
-      }
-
-      if (!props.interact && points.length > 0) {
-        points = [];
+      if (points.length > 0) {
+        points = points.filter((point) => point.health > 0);
       }
     };
 
@@ -96,37 +57,41 @@ export default defineComponent({
         return;
       }
 
-      if (props.interact) {
-        if (points.length > 1) {
-          api.context.strokeStyle = '#ffffff';
-          api.context.beginPath();
+      if (points.length > 1) {
+        api.context.strokeStyle = '#ffffff';
+        api.context.beginPath();
 
-          let first = true;
-          for (const point of points) {
-            if (first) {
-              first = false;
-              api.context.moveTo(point.x, point.y);
-            } else {
-              api.context.lineTo(point.x, point.y);
-            }
+        api.context.moveTo(points[0].x, points[0].y);
+
+        for (var i = 0, len = points.length; i < len; i++) {
+          if (points[i + 1]) {
+            var xc = (points[i].x + points[i + 1].x) / 2;
+            var yc = (points[i].y + points[i + 1].y) / 2;
+            api.context.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
+          } else {
+            api.context.quadraticCurveTo(
+              points[i].x,
+              points[i].y,
+              props.x,
+              props.y
+            );
           }
-
-          api.context.lineTo(props.x, props.y);
-
-          api.context.stroke();
         }
+
+        api.context.stroke();
       }
     };
 
-    const componentId = instance?.parent?.exposed?.register({
-      name: 'slicer',
-      update,
-      render,
-    });
+    registerComponent('slicer', update, render);
 
-    onBeforeUnmount(() => {
-      instance?.parent?.exposed?.deregister(componentId);
-    });
+    watch(
+      () => props.interact,
+      (value) => {
+        if (value) {
+          points = [];
+        }
+      }
+    );
 
     return {};
   },

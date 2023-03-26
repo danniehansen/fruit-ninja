@@ -5,10 +5,14 @@
     @mousemove="onMouseMove"
     @mousedown="onMouseDown"
     @mouseup="onMouseUp"
-    @mouseleave="onMouseLeave"
   >
-    <!-- Components -->
-    <Slicer :x="mouseX" :y="mouseY" :interact="mouseDown" />
+    <Level
+      :width="width"
+      :height="height"
+      :mouse-x="mouseX"
+      :mouse-y="mouseY"
+      :mouse-down="mouseDown"
+    />
 
     <!-- Debug -->
     <DebugFpsCounter />
@@ -16,13 +20,13 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
+import { defineComponent, onMounted, ref } from 'vue';
 import Canvas from './Canvas.vue';
 import DebugFpsCounter from './Debug/DebugFpsCounter.vue';
-import Slicer from './Slicer.vue';
+import Level from './Level.vue';
 
 export default defineComponent({
-  components: { Canvas, Slicer, DebugFpsCounter },
+  components: { Canvas, Level, DebugFpsCounter },
   setup() {
     const width = ref(0);
     const height = ref(0);
@@ -44,10 +48,6 @@ export default defineComponent({
       mouseDown.value = false;
     };
 
-    const onMouseLeave = () => {
-      mouseDown.value = false;
-    };
-
     const resize = () => {
       width.value = window.innerWidth;
       height.value = window.innerHeight;
@@ -60,7 +60,6 @@ export default defineComponent({
       onMouseDown,
       onMouseUp,
       onMouseMove,
-      onMouseLeave,
       mouseX,
       mouseY,
       mouseDown,
